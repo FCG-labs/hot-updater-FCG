@@ -1,0 +1,119 @@
+name: Publish to GitHub Packages
+
+on:
+  push:
+    tags:
+      - 'v*-fcg.*'  # v0.21.15-fcg.1 형식
+  workflow_dispatch:  # 수동 실행
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 0.21.15-fcg.2)'
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@fcg-labs'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            # 태그에서 버전 추출 (v0.21.15-fcg.1 -> 0.21.15-fcg.1)
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update and publish packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          PACKAGES=(
+            "packages/core"
+            "plugins/plugin-core"
+            "packages/cli-tools"
+            "packages/server"
+            "plugins/js"
+            "packages/console"
+            "packages/hot-updater"
+            "packages/react-native"
+          )
+
+          for pkg in "${PACKAGES[@]}"; do
+            echo "📦 Publishing $pkg..."
+            cd "$GITHUB_WORKSPACE/$pkg"
+
+            # package.json 업데이트
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+
+              // 이름 변환
+              if (pkg.name === 'hot-updater') {
+                pkg.name = '@fcg-labs/hot-updater';
+              } else if (pkg.name.startsWith('@hot-updater/')) {
+                pkg.name = pkg.name.replace('@hot-updater/', '@fcg-labs/hot-updater-');
+              }
+
+              // 버전
+              pkg.version = '$VERSION';
+
+              // publishConfig
+              pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
+
+              // dependencies 변환
+              if (pkg.dependencies) {
+                for (const [key, value] of Object.entries(pkg.dependencies)) {
+                  if (key.startsWith('@hot-updater/') && value === 'workspace:*') {
+                    const newKey = key.replace('@hot-updater/', '@fcg-labs/hot-updater-');
+                    delete pkg.dependencies[key];
+                    pkg.dependencies[newKey] = '$VERSION';
+                  }
+                }
+              }
+
+              // devDependencies에서 workspace 제거
+              if (pkg.devDependencies) {
+                for (const [key, value] of Object.entries(pkg.devDependencies)) {
+                  if (value === 'workspace:*' || value === 'catalog:') {
+                    delete pkg.devDependencies[key];
+                  }
+                }
+              }
+
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+              console.log('Updated:', pkg.name + '@' + pkg.version);
+            "
+
+            # 빌드 & 배포
+            pnpm build || true
+            npm publish || echo "⚠️ Failed to publish $pkg"
+
+            cd "$GITHUB_WORKSPACE"
+          done
+
+          echo "✅ Done!"
