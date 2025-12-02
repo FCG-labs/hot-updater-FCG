@@ -1,0 +1,1 @@
+{"version":3,"names":["HotUpdaterError","Error","constructor","message","name"],"sourceRoot":"../../src","sources":["error.ts"],"mappings":";;AAAA,OAAO,MAAMA,eAAe,SAASC,KAAK,CAAC;EACzCC,WAAWA,CAACC,OAAe,EAAE;IAC3B,KAAK,CAACA,OAAO,CAAC;IACd,IAAI,CAACC,IAAI,GAAG,iBAAiB;EAC/B;AACF","ignoreList":[]}
