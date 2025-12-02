@@ -62,7 +62,10 @@ jobs:
             echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Update package.json files for FCG
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Update package.json and publish
         env:
           VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
@@ -72,17 +75,18 @@ jobs:
             "packages/cli-tools"
             "packages/server"
             "plugins/js"
-            "packages/console"
             "packages/hot-updater"
             "packages/react-native"
           )
 
           for pkg in "${PACKAGES[@]}"; do
-            echo "� Updating $pkg/package.json..."
+            echo "📦 Processing $pkg..."
+            cd "$GITHUB_WORKSPACE/$pkg"
+
+            # package.json 업데이트
             node -e "
               const fs = require('fs');
-              const pkgPath = '$pkg/package.json';
-              const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
               // 이름 변환
               if (pkg.name === 'hot-updater') {
@@ -98,7 +102,9 @@ jobs:
               if (pkg.dependencies) {
                 const newDeps = {};
                 for (const [key, value] of Object.entries(pkg.dependencies)) {
-                  if (key.startsWith('@hot-updater/') && value === 'workspace:*') {
+                  if (key === 'hot-updater' && value === 'workspace:*') {
+                    newDeps['@fcg-labs/hot-updater'] = '$VERSION';
+                  } else if (key.startsWith('@hot-updater/') && value === 'workspace:*') {
                     const newKey = key.replace('@hot-updater/', '@fcg-labs/hot-updater-');
                     newDeps[newKey] = '$VERSION';
                   } else if (!value.startsWith('workspace:') && !value.startsWith('catalog:')) {
@@ -119,32 +125,24 @@ jobs:
                 pkg.devDependencies = newDevDeps;
               }
 
-              fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-              console.log('  ✓', pkg.name + '@' + pkg.version);
+              // peerDependencies 변환
+              if (pkg.peerDependencies) {
+                const newPeerDeps = {};
+                for (const [key, value] of Object.entries(pkg.peerDependencies)) {
+                  if (key === 'hot-updater') {
+                    newPeerDeps['@fcg-labs/hot-updater'] = '*';
+                  } else {
+                    newPeerDeps[key] = value;
+                  }
+                }
+                pkg.peerDependencies = newPeerDeps;
+              }
+
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+              console.log('Updated:', pkg.name + '@' + pkg.version);
             "
-          done
 
-      - name: Build all packages
-        run: pnpm build
-
-      - name: Publish packages
-        env:
-          VERSION: ${{ steps.version.outputs.VERSION }}
-        run: |
-          PACKAGES=(
-            "packages/core"
-            "plugins/plugin-core"
-            "packages/cli-tools"
-            "packages/server"
-            "plugins/js"
-            "packages/console"
-            "packages/hot-updater"
-            "packages/react-native"
-          )
-
-          for pkg in "${PACKAGES[@]}"; do
-            echo "📦 Publishing $pkg..."
-            cd "$GITHUB_WORKSPACE/$pkg"
+            # 배포
             npm publish || echo "⚠️ Failed to publish $pkg"
             cd "$GITHUB_WORKSPACE"
           done
