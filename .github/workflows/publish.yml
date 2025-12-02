@@ -101,10 +101,15 @@ jobs:
               // dependencies 변환 (tarball URL 사용)
               const TAG = 'v$VERSION';
               const BASE_URL = 'https://github.com/FCG-labs/hot-updater-FCG/releases/download/' + TAG;
+              // 제외할 패키지 (빌드 미포함)
+              const EXCLUDED = ['@hot-updater/console', '@hot-updater/mock'];
               if (pkg.dependencies) {
                 const newDeps = {};
                 for (const [key, value] of Object.entries(pkg.dependencies)) {
-                  if (key === 'hot-updater' && value === 'workspace:*') {
+                  if (EXCLUDED.includes(key)) {
+                    // 제외 패키지는 스킵
+                    continue;
+                  } else if (key === 'hot-updater' && value === 'workspace:*') {
                     newDeps['@fcg-labs/hot-updater'] = BASE_URL + '/hot-updater.tgz';
                   } else if (key.startsWith('@hot-updater/') && value === 'workspace:*') {
                     const shortName = key.replace('@hot-updater/', 'hot-updater-');
