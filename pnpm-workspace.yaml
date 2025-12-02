@@ -2,8 +2,6 @@ packages:
   - packages/*
   - plugins/*
   - docs
-  - examples/*
-  - examples-server/*
 
 catalog:
   '@types/node': ^20
