@@ -98,15 +98,17 @@ jobs:
 
               pkg.version = '$VERSION';
 
-              // dependencies 변환
+              // dependencies 변환 (tarball URL 사용)
+              const TAG = 'v$VERSION';
+              const BASE_URL = 'https://github.com/FCG-labs/hot-updater-FCG/releases/download/' + TAG;
               if (pkg.dependencies) {
                 const newDeps = {};
                 for (const [key, value] of Object.entries(pkg.dependencies)) {
                   if (key === 'hot-updater' && value === 'workspace:*') {
-                    newDeps['@fcg-labs/hot-updater'] = '$VERSION';
+                    newDeps['@fcg-labs/hot-updater'] = BASE_URL + '/hot-updater.tgz';
                   } else if (key.startsWith('@hot-updater/') && value === 'workspace:*') {
-                    const newKey = key.replace('@hot-updater/', '@fcg-labs/hot-updater-');
-                    newDeps[newKey] = '$VERSION';
+                    const shortName = key.replace('@hot-updater/', 'hot-updater-');
+                    newDeps[key.replace('@hot-updater/', '@fcg-labs/hot-updater-')] = BASE_URL + '/' + shortName + '.tgz';
                   } else if (!value.startsWith('workspace:') && !value.startsWith('catalog:')) {
                     newDeps[key] = value;
                   }
