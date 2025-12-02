@@ -34,13 +34,6 @@ jobs:
         with:
           version: 10.18.1
 
-      - name: Install dependencies
-        run: |
-          # Install root dependencies only (skip workspace packages with broken refs)
-          pnpm install -w --no-frozen-lockfile --ignore-workspace
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Determine version
         id: version
         run: |
@@ -113,7 +106,8 @@ jobs:
               console.log('Updated:', pkg.name + '@' + pkg.version);
             "
 
-            # 빌드 & 배포
+            # 의존성 설치 & 빌드 & 배포
+            npm install --legacy-peer-deps 2>/dev/null || true
             pnpm build || true
             npm publish || echo "⚠️ Failed to publish $pkg"
 
