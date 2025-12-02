@@ -1,4 +1,4 @@
-name: Publish to GitHub Packages
+name: Build and Release
 
 on:
   push:
@@ -11,16 +11,11 @@ on:
         required: true
         type: string
 
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  NODE_AUTH_TOKEN: ${{ secrets.PKG_TOKEN }}
-
 jobs:
-  publish:
+  build-and-release:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: write
 
     steps:
       - name: Checkout
@@ -30,8 +25,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@fcg-labs'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -58,17 +51,21 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "VERSION=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "TAG=v${{ inputs.version }}" >> $GITHUB_OUTPUT
           else
             echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
           fi
 
       - name: Build all packages
         run: pnpm build
 
-      - name: Update package.json and publish
+      - name: Create tarballs
         env:
           VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
+          mkdir -p release-assets
+
           PACKAGES=(
             "packages/core"
             "plugins/plugin-core"
@@ -96,7 +93,6 @@ jobs:
               }
 
               pkg.version = '$VERSION';
-              pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
 
               // dependencies 변환
               if (pkg.dependencies) {
@@ -114,16 +110,8 @@ jobs:
                 pkg.dependencies = newDeps;
               }
 
-              // devDependencies 정리
-              if (pkg.devDependencies) {
-                const newDevDeps = {};
-                for (const [key, value] of Object.entries(pkg.devDependencies)) {
-                  if (!value.startsWith('workspace:') && !value.startsWith('catalog:')) {
-                    newDevDeps[key] = value;
-                  }
-                }
-                pkg.devDependencies = newDevDeps;
-              }
+              // devDependencies 정리 (배포 시 불필요)
+              delete pkg.devDependencies;
 
               // peerDependencies 변환
               if (pkg.peerDependencies) {
@@ -138,13 +126,51 @@ jobs:
                 pkg.peerDependencies = newPeerDeps;
               }
 
+              // peerDependenciesMeta 변환
+              if (pkg.peerDependenciesMeta) {
+                const newMeta = {};
+                for (const [key, value] of Object.entries(pkg.peerDependenciesMeta)) {
+                  if (key === 'hot-updater') {
+                    newMeta['@fcg-labs/hot-updater'] = value;
+                  } else {
+                    newMeta[key] = value;
+                  }
+                }
+                pkg.peerDependenciesMeta = newMeta;
+              }
+
               fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
               console.log('Updated:', pkg.name + '@' + pkg.version);
             "
 
-            # 배포
-            npm publish || echo "⚠️ Failed to publish $pkg"
+            # tarball 생성
+            TARBALL=$(npm pack 2>/dev/null | tail -1)
+            mv "$TARBALL" "$GITHUB_WORKSPACE/release-assets/"
+            echo "  ✓ Created $TARBALL"
+
             cd "$GITHUB_WORKSPACE"
           done
 
-          echo "✅ Done!"
+          echo "📋 Release assets:"
+          ls -la release-assets/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.TAG }}
+          name: Release ${{ steps.version.outputs.TAG }}
+          body: |
+            ## FCG Hot Updater ${{ steps.version.outputs.VERSION }}
+
+            ### 설치 방법
+            ```json
+            {
+              "@fcg-labs/hot-updater-react-native": "https://github.com/FCG-labs/hot-updater-FCG/releases/download/${{ steps.version.outputs.TAG }}/fcg-labs-hot-updater-react-native-${{ steps.version.outputs.VERSION }}.tgz",
+              "@fcg-labs/hot-updater": "https://github.com/FCG-labs/hot-updater-FCG/releases/download/${{ steps.version.outputs.TAG }}/fcg-labs-hot-updater-${{ steps.version.outputs.VERSION }}.tgz"
+            }
+            ```
+          files: release-assets/*.tgz
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
