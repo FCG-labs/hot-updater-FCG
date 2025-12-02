@@ -72,6 +72,10 @@ jobs:
             "packages/cli-tools"
             "packages/server"
             "plugins/js"
+            "plugins/aws"
+            "plugins/bare"
+            "plugins/cloudflare"
+            "plugins/standalone"
             "packages/hot-updater"
             "packages/react-native"
           )
