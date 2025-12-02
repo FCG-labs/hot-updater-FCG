@@ -7,12 +7,6 @@
 
 
   ![hot-updater](https://raw.githubusercontent.com/gronxb/hot-updater/main/demo.gif)
-
-
-  ## Documentation
-
-  Full documentation is available at:
-  https://hot-updater.dev
   
   ## Key Features
 
