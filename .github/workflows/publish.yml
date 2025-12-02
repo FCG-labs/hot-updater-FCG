@@ -4,12 +4,16 @@ on:
   push:
     tags:
       - 'v*-fcg.*'  # v0.21.15-fcg.1 형식
-  workflow_dispatch:  # 수동 실행
+  workflow_dispatch:
     inputs:
       version:
         description: 'Version to publish (e.g., 0.21.15-fcg.2)'
         required: true
         type: string
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   publish:
@@ -34,8 +38,20 @@ jobs:
         with:
           version: 10.18.1
 
-      - name: Install build tools
-        run: npm install --global tsdown typescript
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install monorepo dependencies
+        run: pnpm install
 
       - name: Determine version
         id: version
@@ -43,14 +59,76 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "VERSION=${{ inputs.version }}" >> $GITHUB_OUTPUT
           else
-            # 태그에서 버전 추출 (v0.21.15-fcg.1 -> 0.21.15-fcg.1)
             echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Update and publish packages
+      - name: Update package.json files for FCG
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          PACKAGES=(
+            "packages/core"
+            "plugins/plugin-core"
+            "packages/cli-tools"
+            "packages/server"
+            "plugins/js"
+            "packages/console"
+            "packages/hot-updater"
+            "packages/react-native"
+          )
+
+          for pkg in "${PACKAGES[@]}"; do
+            echo "� Updating $pkg/package.json..."
+            node -e "
+              const fs = require('fs');
+              const pkgPath = '$pkg/package.json';
+              const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+
+              // 이름 변환
+              if (pkg.name === 'hot-updater') {
+                pkg.name = '@fcg-labs/hot-updater';
+              } else if (pkg.name.startsWith('@hot-updater/')) {
+                pkg.name = pkg.name.replace('@hot-updater/', '@fcg-labs/hot-updater-');
+              }
+
+              pkg.version = '$VERSION';
+              pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
+
+              // dependencies 변환
+              if (pkg.dependencies) {
+                const newDeps = {};
+                for (const [key, value] of Object.entries(pkg.dependencies)) {
+                  if (key.startsWith('@hot-updater/') && value === 'workspace:*') {
+                    const newKey = key.replace('@hot-updater/', '@fcg-labs/hot-updater-');
+                    newDeps[newKey] = '$VERSION';
+                  } else if (!value.startsWith('workspace:') && !value.startsWith('catalog:')) {
+                    newDeps[key] = value;
+                  }
+                }
+                pkg.dependencies = newDeps;
+              }
+
+              // devDependencies 정리
+              if (pkg.devDependencies) {
+                const newDevDeps = {};
+                for (const [key, value] of Object.entries(pkg.devDependencies)) {
+                  if (!value.startsWith('workspace:') && !value.startsWith('catalog:')) {
+                    newDevDeps[key] = value;
+                  }
+                }
+                pkg.devDependencies = newDevDeps;
+              }
+
+              fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+              console.log('  ✓', pkg.name + '@' + pkg.version);
+            "
+          done
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Publish packages
+        env:
           VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
           PACKAGES=(
@@ -67,54 +145,7 @@ jobs:
           for pkg in "${PACKAGES[@]}"; do
             echo "📦 Publishing $pkg..."
             cd "$GITHUB_WORKSPACE/$pkg"
-
-            # package.json 업데이트
-            node -e "
-              const fs = require('fs');
-              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-
-              // 이름 변환
-              if (pkg.name === 'hot-updater') {
-                pkg.name = '@fcg-labs/hot-updater';
-              } else if (pkg.name.startsWith('@hot-updater/')) {
-                pkg.name = pkg.name.replace('@hot-updater/', '@fcg-labs/hot-updater-');
-              }
-
-              // 버전
-              pkg.version = '$VERSION';
-
-              // publishConfig
-              pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
-
-              // dependencies 변환
-              if (pkg.dependencies) {
-                for (const [key, value] of Object.entries(pkg.dependencies)) {
-                  if (key.startsWith('@hot-updater/') && value === 'workspace:*') {
-                    const newKey = key.replace('@hot-updater/', '@fcg-labs/hot-updater-');
-                    delete pkg.dependencies[key];
-                    pkg.dependencies[newKey] = '$VERSION';
-                  }
-                }
-              }
-
-              // devDependencies에서 workspace 제거
-              if (pkg.devDependencies) {
-                for (const [key, value] of Object.entries(pkg.devDependencies)) {
-                  if (value === 'workspace:*' || value === 'catalog:') {
-                    delete pkg.devDependencies[key];
-                  }
-                }
-              }
-
-              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-              console.log('Updated:', pkg.name + '@' + pkg.version);
-            "
-
-            # 의존성 설치 & 빌드 & 배포
-            npm install --legacy-peer-deps 2>/dev/null || true
-            pnpm build || true
             npm publish || echo "⚠️ Failed to publish $pkg"
-
             cd "$GITHUB_WORKSPACE"
           done
 
