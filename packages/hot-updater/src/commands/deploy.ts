@@ -9,8 +9,6 @@ import {
 } from "@hot-updater/cli-tools";
 import type { Platform } from "@hot-updater/plugin-core";
 import fs from "fs";
-import isPortReachable from "is-port-reachable";
-import open from "open";
 import path from "path";
 import semverValid from "semver/ranges/valid";
 import { getPlatform } from "@/prompts/getPlatform";
@@ -31,7 +29,6 @@ import { getDefaultOutputPath } from "@/utils/output/getDefaultOutputPath";
 import { printBanner } from "@/utils/printBanner";
 import { getDefaultTargetAppVersion } from "@/utils/version/getDefaultTargetAppVersion";
 import { getNativeAppVersion } from "@/utils/version/getNativeAppVersion";
-import { getConsolePort, openConsole } from "./console";
 
 export interface DeployOptions {
   bundleOutputPath?: string;
@@ -372,34 +369,6 @@ export const deploy = async (options: DeployOptions) => {
       throw new Error("Bundle ID not found");
     }
 
-    if (options.interactive) {
-      const port = await getConsolePort(config);
-      const isConsoleOpen = await isPortReachable(port, { host: "localhost" });
-
-      const openUrl = new URL(`http://localhost:${port}`);
-      openUrl.searchParams.set("channel", channel);
-      openUrl.searchParams.set("platform", platform);
-      openUrl.searchParams.set("bundleId", bundleId);
-
-      const url = openUrl.toString();
-
-      const note = `Console: ${url}`;
-      if (!isConsoleOpen) {
-        const result = await p.confirm({
-          message: "Console server is not running. Would you like to start it?",
-          initialValue: false,
-        });
-        if (!p.isCancel(result) && result) {
-          await openConsole(port, () => {
-            void open(url);
-          });
-        }
-      } else {
-        void open(url);
-      }
-
-      p.note(note);
-    }
     p.outro("🚀 Deployment Successful");
   } catch (e) {
     await databasePlugin.onUnmount?.();
