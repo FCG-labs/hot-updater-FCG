@@ -147,10 +147,12 @@ jobs:
               console.log('Updated:', pkg.name + '@' + pkg.version);
             "
 
-            # tarball 생성
-            TARBALL=$(npm pack 2>/dev/null | tail -1)
-            mv "$TARBALL" "$GITHUB_WORKSPACE/release-assets/"
-            echo "  ✓ Created $TARBALL"
+            # tarball 생성 (간단한 이름으로)
+            npm pack 2>/dev/null
+            PKG_NAME=$(node -p "require('./package.json').name.replace('@fcg-labs/', '')")
+            TARBALL=$(ls *.tgz | head -1)
+            mv "$TARBALL" "$GITHUB_WORKSPACE/release-assets/${PKG_NAME}.tgz"
+            echo "  ✓ Created ${PKG_NAME}.tgz"
 
             cd "$GITHUB_WORKSPACE"
           done
@@ -169,8 +171,8 @@ jobs:
             ### 설치 방법
             ```json
             {
-              "@fcg-labs/hot-updater-react-native": "https://github.com/FCG-labs/hot-updater-FCG/releases/download/${{ steps.version.outputs.TAG }}/fcg-labs-hot-updater-react-native-${{ steps.version.outputs.VERSION }}.tgz",
-              "@fcg-labs/hot-updater": "https://github.com/FCG-labs/hot-updater-FCG/releases/download/${{ steps.version.outputs.TAG }}/fcg-labs-hot-updater-${{ steps.version.outputs.VERSION }}.tgz"
+              "@fcg-labs/hot-updater-react-native": "https://github.com/FCG-labs/hot-updater-FCG/releases/download/${{ steps.version.outputs.TAG }}/hot-updater-react-native.tgz",
+              "@fcg-labs/hot-updater": "https://github.com/FCG-labs/hot-updater-FCG/releases/download/${{ steps.version.outputs.TAG }}/hot-updater.tgz"
             }
             ```
           files: release-assets/*.tgz
