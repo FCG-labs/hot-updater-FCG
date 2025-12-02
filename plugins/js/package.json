@@ -1,6 +1,6 @@
 {
-  "name": "@fcg-labs/hot-updater-js",
-  "version": "0.21.15-fcg.1",
+  "name": "@hot-updater/js",
+  "version": "0.21.15",
   "type": "module",
   "description": "React Native OTA solution for self-hosted",
   "sideEffects": false,
@@ -40,12 +40,14 @@
   },
   "homepage": "https://github.com/gronxb/hot-updater#readme",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "dependencies": {
-    "@fcg-labs/hot-updater-core": "0.21.15-fcg.1"
+    "@hot-updater/core": "workspace:*"
   },
   "devDependencies": {
+    "@hot-updater/test-utils": "workspace:*",
+    "@types/node": "catalog:",
     "@types/semver": "^7.5.8",
     "jose": "^6.0.10",
     "semver": "^7.6.3"

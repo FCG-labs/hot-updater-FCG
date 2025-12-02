@@ -1,7 +1,7 @@
 {
-  "name": "@fcg-labs/hot-updater-console",
+  "name": "@hot-updater/console",
   "type": "module",
-  "version": "0.21.15-fcg.1",
+  "version": "0.21.15",
   "files": [
     "dist",
     "package.json"
@@ -29,6 +29,7 @@
     "@hono/node-server": "^1.13.4",
     "@hono/typia-validator": "^0.1.2",
     "@hono/vite-dev-server": "^0.18.1",
+    "@hot-updater/mock": "workspace:*",
     "@kobalte/core": "^0.13.10",
     "@ryoppippi/unplugin-typia": "^2.0.3",
     "@solidjs/meta": "^0.29.4",
@@ -36,6 +37,7 @@
     "@tanstack/solid-form": "^1.12.2",
     "@tanstack/solid-query": "^5.80.6",
     "@tanstack/solid-table": "^8.21.3",
+    "@types/node": "catalog:",
     "@types/semver": "^7.5.8",
     "autoprefixer": "^10.4.19",
     "class-variance-authority": "^0.7.0",
@@ -57,10 +59,10 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "dependencies": {
-    "solid-icons": "^1.1.0",
-    "@fcg-labs/hot-updater-cli-tools": "0.21.15-fcg.1",
-    "@fcg-labs/hot-updater-core": "0.21.15-fcg.1",
-    "@fcg-labs/hot-updater-plugin-core": "0.21.15-fcg.1"
+    "@hot-updater/cli-tools": "workspace:*",
+    "@hot-updater/core": "workspace:*",
+    "@hot-updater/plugin-core": "workspace:*",
+    "solid-icons": "^1.1.0"
   },
   "description": "React Native OTA solution for self-hosted",
   "license": "MIT",
@@ -71,6 +73,6 @@
   },
   "homepage": "https://github.com/gronxb/hot-updater#readme",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   }
 }

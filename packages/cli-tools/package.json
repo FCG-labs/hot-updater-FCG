@@ -1,6 +1,6 @@
 {
-  "name": "@fcg-labs/hot-updater-cli-tools",
-  "version": "0.21.15-fcg.1",
+  "name": "@hot-updater/cli-tools",
+  "version": "0.21.15",
   "type": "module",
   "description": "CLI utilities for Hot Updater",
   "sideEffects": false,
@@ -40,13 +40,14 @@
   },
   "homepage": "https://github.com/gronxb/hot-updater#readme",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "dependencies": {
-    "oxc-transform": "0.82.1",
-    "@fcg-labs/hot-updater-plugin-core": "0.21.15-fcg.1"
+    "@hot-updater/plugin-core": "workspace:*",
+    "oxc-transform": "0.82.1"
   },
   "devDependencies": {
+    "@hot-updater/test-utils": "workspace:*",
     "@clack/prompts": "0.11.0",
     "boxen": "^8.0.1",
     "cosmiconfig": "9.0.0",
@@ -57,6 +58,7 @@
     "picocolors": "1.1.1",
     "tar": "^7.5.1",
     "workspace-tools": "^0.36.4",
+    "@types/node": "catalog:",
     "typescript": "5.8.2"
   },
   "peerDependencies": {

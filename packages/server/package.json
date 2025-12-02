@@ -1,6 +1,6 @@
 {
-  "name": "@fcg-labs/hot-updater-server",
-  "version": "0.21.15-fcg.1",
+  "name": "@hot-updater/server",
+  "version": "0.21.15",
   "type": "module",
   "description": "React Native OTA solution for self-hosted",
   "sideEffects": false,
@@ -47,18 +47,25 @@
   "repository": "https://github.com/gronxb/hot-updater",
   "author": "gronxb <gron1gh1@gmail.com> (https://github.com/gronxb)",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "dependencies": {
+    "@hot-updater/core": "workspace:*",
+    "@hot-updater/plugin-core": "workspace:*",
+    "@hot-updater/js": "workspace:*",
     "fumadb": "0.2.1",
     "rou3": "0.7.9",
-    "semver": "^7.7.2",
-    "@fcg-labs/hot-updater-core": "0.21.15-fcg.1",
-    "@fcg-labs/hot-updater-plugin-core": "0.21.15-fcg.1",
-    "@fcg-labs/hot-updater-js": "0.21.15-fcg.1"
+    "semver": "^7.7.2"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.2.17",
+    "@hot-updater/aws": "workspace:*",
+    "@hot-updater/cloudflare": "workspace:*",
+    "@hot-updater/firebase": "workspace:*",
+    "@hot-updater/standalone": "workspace:*",
+    "@hot-updater/supabase": "workspace:*",
+    "@hot-updater/test-utils": "workspace:*",
+    "@types/node": "catalog:",
     "@types/semver": "^7.5.8",
     "execa": "^9.5.2",
     "kysely": "^0.28.5",

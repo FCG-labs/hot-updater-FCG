@@ -1,6 +1,6 @@
 {
-  "name": "@fcg-labs/hot-updater-react-native",
-  "version": "0.21.15-fcg.1",
+  "name": "@hot-updater/react-native",
+  "version": "0.21.15",
   "description": "React Native OTA solution for self-hosted",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -69,7 +69,7 @@
   },
   "homepage": "https://github.com/gronxb/hot-updater#readme",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "react-native-builder-bob": {
     "source": "src",
@@ -130,7 +130,10 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@fcg-labs/hot-updater-core": "0.21.15-fcg.1",
+    "@hot-updater/cli-tools": "workspace:*",
+    "@hot-updater/core": "workspace:*",
+    "@hot-updater/js": "workspace:*",
+    "@hot-updater/plugin-core": "workspace:*",
     "use-sync-external-store": "1.5.0"
   }
 }
