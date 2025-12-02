@@ -34,6 +34,9 @@ jobs:
         with:
           version: 10.18.1
 
+      - name: Install build tools
+        run: npm install --global tsdown typescript
+
       - name: Determine version
         id: version
         run: |
@@ -47,6 +50,7 @@ jobs:
       - name: Update and publish packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
           PACKAGES=(
