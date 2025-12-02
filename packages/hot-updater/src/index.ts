@@ -1,17 +1,15 @@
 #!/usr/bin/env node
 import { Command, Option } from "@commander-js/extra-typings";
-import { banner, colors, log, p } from "@hot-updater/cli-tools";
+import { banner, log, p } from "@hot-updater/cli-tools";
 import semverValid from "semver/ranges/valid";
 import {
   interactiveCommandOption,
   platformCommandOption,
 } from "@/commandOptions";
 import { type NativeBuildOptions, nativeBuild } from "@/commands/buildNative";
-import { getConsolePort, openConsole } from "@/commands/console";
 import { type DeployOptions, deploy } from "@/commands/deploy";
 import { init } from "@/commands/init";
 import { version } from "@/packageJson";
-import { printBanner } from "@/utils/printBanner";
 import { getNativeAppVersion } from "@/utils/version/getNativeAppVersion";
 import { handleChannel, handleSetChannel } from "./commands/channel";
 import { handleDoctor } from "./commands/doctor";
@@ -103,23 +101,6 @@ program
   )
   .action(async (options: DeployOptions) => {
     deploy(options);
-  });
-
-program
-  .command("console")
-  .description("open the console")
-  .action(async () => {
-    printBanner();
-
-    const port = await getConsolePort();
-
-    await openConsole(port, (info) => {
-      console.log(
-        `Server running on ${colors.magenta(
-          colors.underline(`http://localhost:${info.port}`),
-        )}`,
-      );
-    });
   });
 
 program
