@@ -163,12 +163,14 @@ jobs:
             "
 
             # dist 내 import 경로 변환 (@hot-updater/* → @fcg-labs/hot-updater-*)
+            # 단, console과 mock은 제외 (빌드 미포함 패키지)
             if [ -d "dist" ]; then
-              find dist -name '*.js' -o -name '*.cjs' -o -name '*.mjs' | while read f; do
+              find dist \( -name '*.js' -o -name '*.cjs' -o -name '*.mjs' -o -name '*.d.ts' \) | while read f; do
+                # 먼저 모든 @hot-updater/를 변환
                 sed -i 's/@hot-updater\//@fcg-labs\/hot-updater-/g' "$f"
-              done
-              find dist -name '*.d.ts' | while read f; do
-                sed -i 's/@hot-updater\//@fcg-labs\/hot-updater-/g' "$f"
+                # console과 mock은 원래대로 되돌림
+                sed -i 's/@fcg-labs\/hot-updater-console/@hot-updater\/console/g' "$f"
+                sed -i 's/@fcg-labs\/hot-updater-mock/@hot-updater\/mock/g' "$f"
               done
               echo "  ✓ Transformed import paths in dist/"
             fi
