@@ -124,15 +124,18 @@ jobs:
               // devDependencies 정리 (배포 시 불필요)
               delete pkg.devDependencies;
 
+              // 패키지명 변환 헬퍼
+              function transformPkgName(name) {
+                if (name === 'hot-updater') return '@fcg-labs/hot-updater';
+                if (name.startsWith('@hot-updater/')) return name.replace('@hot-updater/', '@fcg-labs/hot-updater-');
+                return name;
+              }
+
               // peerDependencies 변환
               if (pkg.peerDependencies) {
                 const newPeerDeps = {};
                 for (const [key, value] of Object.entries(pkg.peerDependencies)) {
-                  if (key === 'hot-updater') {
-                    newPeerDeps['@fcg-labs/hot-updater'] = '*';
-                  } else {
-                    newPeerDeps[key] = value;
-                  }
+                  newPeerDeps[transformPkgName(key)] = value;
                 }
                 pkg.peerDependencies = newPeerDeps;
               }
@@ -141,18 +144,34 @@ jobs:
               if (pkg.peerDependenciesMeta) {
                 const newMeta = {};
                 for (const [key, value] of Object.entries(pkg.peerDependenciesMeta)) {
-                  if (key === 'hot-updater') {
-                    newMeta['@fcg-labs/hot-updater'] = value;
-                  } else {
-                    newMeta[key] = value;
-                  }
+                  newMeta[transformPkgName(key)] = value;
                 }
                 pkg.peerDependenciesMeta = newMeta;
+              }
+
+              // optionalDependencies 변환
+              if (pkg.optionalDependencies) {
+                const newOptDeps = {};
+                for (const [key, value] of Object.entries(pkg.optionalDependencies)) {
+                  newOptDeps[transformPkgName(key)] = value;
+                }
+                pkg.optionalDependencies = newOptDeps;
               }
 
               fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
               console.log('Updated:', pkg.name + '@' + pkg.version);
             "
+
+            # dist 내 import 경로 변환 (@hot-updater/* → @fcg-labs/hot-updater-*)
+            if [ -d "dist" ]; then
+              find dist -name '*.js' -o -name '*.cjs' -o -name '*.mjs' | while read f; do
+                sed -i 's/@hot-updater\//@fcg-labs\/hot-updater-/g' "$f"
+              done
+              find dist -name '*.d.ts' | while read f; do
+                sed -i 's/@hot-updater\//@fcg-labs\/hot-updater-/g' "$f"
+              done
+              echo "  ✓ Transformed import paths in dist/"
+            fi
 
             # tarball 생성 (간단한 이름으로)
             npm pack 2>/dev/null
