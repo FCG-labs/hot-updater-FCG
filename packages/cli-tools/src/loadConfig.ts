@@ -109,12 +109,17 @@ export type ConfigResponse = RequiredDeep<ConfigInput>;
 const configOptions = {
   stopDir: getCwd(),
   searchPlaces: [
-    "hot-updater.config.js",
-    "hot-updater.config.cjs",
-    "hot-updater.config.ts",
-    "hot-updater.config.cts",
-    "hot-updater.config.cjs",
-    "hot-updater.config.mts",
+    "ota.config.js",
+    "ota.config.cjs",
+    "ota.config.ts",
+    "ota.config.cts",
+    "ota.config.mts",
+    // "hot-updater.config.js",
+    // "hot-updater.config.cjs",
+    // "hot-updater.config.ts",
+    // "hot-updater.config.cts",
+    // "hot-updater.config.cjs",
+    // "hot-updater.config.mts",
   ],
   ignoreEmptySearchPlaces: false,
   loaders: {
