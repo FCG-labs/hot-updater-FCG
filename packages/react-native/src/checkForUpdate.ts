@@ -20,6 +20,23 @@ export interface CheckForUpdateOptions {
    * @default 5000
    */
   requestTimeout?: number;
+  /**
+   * Override the channel for this request only.
+   * The native channel remains unchanged (isolation key preserved).
+   *
+   * ⚠️ WARNING: Use with caution in production.
+   * Receiving bundles from a different channel may cause unexpected behavior.
+   * Intended for development/QA purposes only.
+   *
+   * @example
+   * ```ts
+   * await HotUpdater.checkForUpdate({
+   *   source: getUpdateSource(...),
+   *   channelOverride: 'stage', // Request stage bundles instead of production
+   * });
+   * ```
+   */
+  channelOverride?: string;
 }
 
 export type CheckForUpdateResult = AppUpdateInfo & {
@@ -48,7 +65,9 @@ export async function checkForUpdate(
   const platform = Platform.OS as "ios" | "android";
   const currentBundleId = getBundleId();
   const minBundleId = getMinBundleId();
-  const channel = getChannel();
+  const nativeChannel = getChannel();
+  // Use channelOverride if provided, otherwise use native channel
+  const channel = options.channelOverride ?? nativeChannel;
 
   if (!currentAppVersion) {
     options.onError?.(new HotUpdaterError("Failed to get app version"));

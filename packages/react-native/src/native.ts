@@ -157,11 +157,11 @@ export const getBundleId = (): string => {
 /**
  * Fetches the channel for the app.
  *
- * @returns {string} Resolves with the channel or null if not available.
+ * @returns {string} Resolves with the channel, defaults to 'production' if not set.
  */
 export const getChannel = (): string => {
   const constants = HotUpdaterNative.getConstants();
-  return constants.CHANNEL;
+  return constants.CHANNEL || "production";
 };
 
 /**

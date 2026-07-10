@@ -8,15 +8,12 @@ export const link = (url: string) => {
 export const banner = (version?: string) =>
   boxen(
     [
-      `${picocolors.bold("Hot Updater - React Native OTA Solution")} ${version ? `v${version}` : ""}`,
-      "",
-      `Github: ${link("https://github.com/gronxb/hot-updater")}`,
-      "Give a ⭐️ if you like it!",
+      `${picocolors.bold("Hot Updater")} ${version ? `v${version}` : ""}`,
     ].join("\n"),
     {
       padding: 1,
       borderStyle: "round",
-      borderColor: "green",
+      borderColor: "cyan",
       textAlignment: "center",
     },
   );

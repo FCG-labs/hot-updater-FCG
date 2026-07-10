@@ -76,6 +76,7 @@ export function wrap<P extends React.JSX.IntrinsicAttributes = object>(
             source: restOptions.source,
             requestHeaders: restOptions.requestHeaders,
             onError: restOptions.onError,
+            channelOverride: restOptions.channelOverride,
           });
 
           setMessage(updateInfo?.message ?? null);

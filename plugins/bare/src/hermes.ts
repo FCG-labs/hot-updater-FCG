@@ -58,7 +58,8 @@ function getComposeSourceMapsPath(cwd: string): string | null {
 /**
  * Finds the Hermes command.
  * If Hermes is bundled with react-native, returns the hermesc path.
- * Otherwise, returns the path from node_modules/hermes-engine or hermesvm.
+ * Otherwise, returns the path from node_modules/hermes-engine,
+ * hermes-compiler, or hermesvm.
  *
  * @returns Full path to the Hermes executable
  */
@@ -92,6 +93,18 @@ export async function getHermesCommand(cwd: string): Promise<string> {
   );
   if (fileExists(hermesEngine)) {
     return hermesEngine;
+  }
+
+  // React Native 0.86+ provides the matching compiler as hermes-compiler.
+  const hermesCompiler = path.join(
+    "node_modules",
+    "hermes-compiler",
+    "hermesc",
+    getHermesOSBin(),
+    getHermesOSExe(),
+  );
+  if (fileExists(hermesCompiler)) {
+    return hermesCompiler;
   }
 
   // Otherwise, fallback to hermesvm.

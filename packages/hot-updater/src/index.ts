@@ -1,17 +1,14 @@
 #!/usr/bin/env node
 import { Command, Option } from "@commander-js/extra-typings";
-import { banner, colors, log, p } from "@hot-updater/cli-tools";
+import { banner, log, p } from "@hot-updater/cli-tools";
 import semverValid from "semver/ranges/valid";
 import {
   interactiveCommandOption,
   platformCommandOption,
 } from "@/commandOptions";
-import { type NativeBuildOptions, nativeBuild } from "@/commands/buildNative";
-import { getConsolePort, openConsole } from "@/commands/console";
 import { type DeployOptions, deploy } from "@/commands/deploy";
 import { init } from "@/commands/init";
 import { version } from "@/packageJson";
-import { printBanner } from "@/utils/printBanner";
 import { getNativeAppVersion } from "@/utils/version/getNativeAppVersion";
 import { handleChannel, handleSetChannel } from "./commands/channel";
 import { handleDoctor } from "./commands/doctor";
@@ -150,23 +147,6 @@ program
   });
 
 program
-  .command("console")
-  .description("open the console")
-  .action(async () => {
-    printBanner();
-
-    const port = await getConsolePort();
-
-    await openConsole(port, (info) => {
-      console.log(
-        `Server running on ${colors.magenta(
-          colors.underline(`http://localhost:${info.port}`),
-        )}`,
-      );
-    });
-  });
-
-program
   .command("app-version")
   .description("get the current app version")
   .action(async () => {
@@ -220,34 +200,5 @@ dbCommand
       });
     },
   );
-
-// developing command groups
-if (process.env["NODE_ENV"] === "development") {
-  program
-    .command("build:native")
-    .description("build a new native artifact and deploy")
-    .addOption(
-      new Option("-p, --platform <platform>", "specify the platform").choices([
-        "ios",
-        "android",
-      ]),
-    )
-    .addOption(
-      new Option(
-        "-o, --output-path <outputPath>",
-        "the path where the artifacts will be generated",
-      ),
-    )
-    .addOption(interactiveCommandOption)
-    .addOption(
-      new Option(
-        "-m, --message <message>",
-        "Specify a custom message for this deployment. If not provided, the latest git commit message will be used as the deployment message",
-      ),
-    )
-    .action(async (options: NativeBuildOptions) => {
-      nativeBuild(options);
-    });
-}
 
 program.parse(process.argv);

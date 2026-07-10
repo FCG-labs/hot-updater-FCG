@@ -18,8 +18,7 @@
     "release": "pnpm clear && pnpm build && nx release --skip-publish",
     "publish:all": "nx release publish",
     "publish:rc": "nx release publish --tag rc",
-    "changeset": "changeset",
-    "preinstall": "node preinstall.js"
+    "changeset": "changeset"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.2",
