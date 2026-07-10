@@ -31,8 +31,12 @@ const getDefaultPlatformConfig = (): ConfigInput["platform"] => {
         "**/Pods/**",
         "**/build/**",
         "**/Build/**",
+        "**/DerivedData/**",
         "**/*.app/**",
         "**/*.xcarchive/**",
+        "**/*.xcresult/**",
+        "**/*.xcframework/**",
+        "**/*.framework/**",
       ],
     });
 
