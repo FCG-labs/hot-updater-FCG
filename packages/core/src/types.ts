@@ -2,6 +2,10 @@ export type Platform = "ios" | "android";
 
 export type BundleMetadata = {
   app_version?: string;
+  /** 업로더 식별 (git user.name → OS user@host 폴백, HOT_UPDATER_UPLOADER로 오버라이드) */
+  uploader?: string;
+  /** 업로드 시점 브랜치 (detached worktree면 HOT_UPDATER_GIT_BRANCH 주입값) */
+  git_branch?: string;
 };
 
 export interface Bundle {

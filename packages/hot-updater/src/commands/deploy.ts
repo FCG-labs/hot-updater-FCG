@@ -23,7 +23,7 @@ import {
 } from "@/utils/fingerprint/diff";
 import { getBundleZipTargets } from "@/utils/getBundleZipTargets";
 import { getFileHashFromFile } from "@/utils/getFileHash";
-import { getLatestGitCommit } from "@/utils/git";
+import { getLatestGitCommit, getUploaderIdentity } from "@/utils/git";
 import { appendOutputDirectoryIntoGitignore } from "@/utils/output/appendOutputDirectoryIntoGitignore";
 import { getDefaultOutputPath } from "@/utils/output/getDefaultOutputPath";
 import { printBanner } from "@/utils/printBanner";
@@ -399,6 +399,7 @@ export const deploy = async (options: DeployOptions) => {
             throw new Error("Storage URI not found");
           }
           const appVersion = await getNativeAppVersion(platform);
+          const uploaderIdentity = await getUploaderIdentity();
 
           try {
             await databasePlugin.appendBundle({
@@ -418,6 +419,10 @@ export const deploy = async (options: DeployOptions) => {
                   ? {
                       app_version: appVersion,
                     }
+                  : {}),
+                uploader: uploaderIdentity.uploader,
+                ...(uploaderIdentity.gitBranch
+                  ? { git_branch: uploaderIdentity.gitBranch }
                   : {}),
               },
             });

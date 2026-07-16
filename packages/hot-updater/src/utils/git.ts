@@ -1,6 +1,7 @@
 import { getCwd } from "@hot-updater/cli-tools";
 import { exec } from "child_process";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { promisify } from "util";
 
@@ -46,6 +47,49 @@ export const getLatestGitCommit = async (): Promise<Commit | null> => {
   } catch {
     return null;
   }
+};
+
+export interface UploaderIdentity {
+  uploader: string;
+  gitBranch: string | null;
+}
+
+/**
+ * 번들 메타데이터용 업로더 식별 정보.
+ *
+ * 릴리즈 스크립트가 detached worktree에서 deploy를 실행하면 브랜치명이 "HEAD"로
+ * 뭉개지므로, 호출측이 원 브랜치를 아는 경우 환경변수(HOT_UPDATER_GIT_BRANCH,
+ * HOT_UPDATER_UPLOADER)로 주입할 수 있게 오버라이드를 우선한다.
+ */
+export const getUploaderIdentity = async (): Promise<UploaderIdentity> => {
+  const cwd = getCwd();
+
+  let gitUserName: string | null = null;
+  try {
+    const { stdout } = await execAsync("git config user.name", { cwd });
+    gitUserName = stdout.trim() || null;
+  } catch {
+    gitUserName = null;
+  }
+
+  let gitBranch: string | null = null;
+  try {
+    const { stdout } = await execAsync("git rev-parse --abbrev-ref HEAD", {
+      cwd,
+    });
+    const branch = stdout.trim();
+    gitBranch = branch && branch !== "HEAD" ? branch : null;
+  } catch {
+    gitBranch = null;
+  }
+
+  const fallbackUploader = `${os.userInfo().username}@${os.hostname()}`;
+
+  return {
+    uploader:
+      process.env["HOT_UPDATER_UPLOADER"] || gitUserName || fallbackUploader,
+    gitBranch: process.env["HOT_UPDATER_GIT_BRANCH"] || gitBranch,
+  };
 };
 
 /**
